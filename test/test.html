@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .main {
+            width: 200px;
+            height: 200px;
+            border: 1px solid red;
+            position: relative;
+            /* display: flex */
+        }
+
+        .box {
+            border: 1px solid blue;
+            width: 40px;
+            height: 30px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            position: absolute;
+            /* position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -15px;
+            margin-left: -20px;
+            transform: translate(-50%, 50%); */
+
+        }
+    </style>
+</head>
+<body>
+    <a href="./index.html" target="_black">hello world</a>
+    <button id="button">click</button>
+    <div class="main">
+        <div class="box">11111</div>
+    </div>
+    <input type="text" id="debounce">
+    <script>
+        async function  requestData(urls =[], max = 1, callback =()=>{}){
+        //  这边直接定义一个数组接受所有fetch request
+        const fetchArr   =[]
+        const requestArr =[]
+        for (const item of urls){
+            const p = fetch(item)
+            fetchArr.push(p)
+            //  如果最大限制比数组小我们才需要走这一步
+            if(max <= urls.length){
+                const e = p.then(()=>{
+                    requestArr.splice(requestArr.indexOf(p),    1)
+                })
+                console.log(e)
+                requestArr.push(e)
+                if (requestArr.length >= max){
+                    await Promise.race(requestArr);
+                }
+            }
+        }
+        Promise.all(fetchArr).then(()=>{
+            callback()
+        })
+    }
+
+
+
+    const list = [  
+        'https://www.kkkk1000.com/images/getImgData/getImgDatadata.jpg', 
+        'https://www.kkkk1000.com/images/getImgData/gray.gif', 
+        'https://www.kkkk1000.com/images/getImgData/Particle.gif', 
+        'https://www.kkkk1000.com/images/getImgData/arithmetic.png', 
+        'https://www.kkkk1000.com/images/getImgData/arithmetic2.gif', 
+        'https://www.kkkk1000.com/images/getImgData/getImgDataError.jpg', 
+        'https://www.kkkk1000.com/images/getImgData/arithmetic.gif', 
+        'https://www.kkkk1000.com/images/wxQrCode2.png'
+        ]
+    requestData(list, 2, () => console.log('end'))
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+
+
+
+<html>
+
+    <head>
+        
+    </head>
+    
+    
+    <body>
+        <button id="open">open</button>
+        <button id="close">close</button>
+    </body>
+    <script>
+        const modal = (function() {
+            let modal = null
+            return function() {
+                if (!modal) {
+                    modal = document.createElement('div')
+                    modal.innerHTML = 'i am only'
+                    modal.id = 'modal'
+                    modal.style.display = 'none'
+                    document.body.append(modal)
+                }
+                return modal
+            }
+        })()
+
+        // document.getElementById('open').addEventListener('click', () => {
+        //     const modalEl = modal()
+        //     modalEl.style.display = 'block'
+        // })
+
+        
+
+        class CloseButton {
+            onClick() {
+                const modal = document.getElementById('modal')
+                if (modal) {
+                    modal.style.display = 'none'
+                }
+            }
+        }
+
+        class OpenButton {
+            onClick() {
+                const modalEl = modal()
+                modalEl.style.display = 'block'
+            }
+        }
+
+        class Decorator {
+            constructor(closeButton) {
+                this.closeButton = closeButton
+            }
+
+            onClick() {
+                this.closeButton.onClick()
+                this.changeStatus()
+            }
+
+            changeStatus() {
+                this.changeText()
+                this.disableButton()
+            }
+
+            changeText() {
+                const openButton = document.getElementById('open')
+                openButton.innerText = '快去登录'
+            }
+
+            disableButton() {
+                const openButton = document.getElementById('open')
+                openButton.setAttribute('disabled', true)
+            }
+        }
+
+        const closeButton = new CloseButton()
+        const openButton = new OpenButton()
+        // const decorator = new Decorator(closeButton)
+        const decorator = new Decorator(openButton)
+
+        document.getElementById('close').addEventListener('click', () => {
+            decorator.onClick()
+        })
+        document.getElementById('open').addEventListener('click', () => {
+            decorator.onClick()
+        })
+    </script>
+
+    
+    <script>
+    </script>
+    </html>
+    
