@@ -29,3 +29,6 @@ interface Add {
     (a: number, b: number): number;
 }
 ```
+
+## import type 和 import 的区别
+import 进来的可以是值也可以是类型，并且可以被一起import 进来，这样的话，单看 import 的地方，是看不出来到底是值还是个类型，当 ts 被编译成 js 的时候，关于类型的代码，都会被删掉，但是如果不知道是不是类型的话，就不会被删掉，而 import type 就是标明这个东西是个类型，告诉编译器，你可以删

@@ -8,11 +8,11 @@ function findNumberIn2DArray(nums, target) {
             return true
         }
         // 如果当前数字小于目标值，那么列数往右移 因为横向的数字是从左往右递增的 小了就肯定在右边
-        if (nums[i][j] < target) {
+        else if (nums[i][j] < target) {
             j++
         }
         // 如果当前数字大于目标值了 那么行数往上移 因为纵向的数字是从上到下递增的 大了就肯定在上面
-        if (nums[i][j] > target) {
+        else if (nums[i][j] > target) {
             i--
         }
     } 

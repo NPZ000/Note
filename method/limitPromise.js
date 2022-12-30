@@ -1,49 +1,65 @@
-class TaskPoll {
+class ITaskPoll {
     constructor(max) {
+        this.taskList = []
         this.max = max
-        this.queue = []
     }
 
-    addTask(task) {
+    addTask(task, args) {
+        // 返回一个 promise 给 promise.all 接收
         return new Promise(resolve => {
-            this.queue.push(task)
+            // 如果当前未达到限制数量 就直接执行任务 并把返回值 resolve 出去
             if (this.max) {
                 this.max--
-                resolve(this.runTask(this.queue.shift()))
+                resolve(this.runTask(task, args))
+            } else {
+                // 否则 就先把任务缓存到队列中
+                // 注意这里把当前的 resolve 也存进去，是因为之后只有使用这个resolve才能和外面的promiseAll 建立联系，并且把返回值 resolve 出去
+                this.taskList.push({
+                    task,
+                    args,
+                    resolve
+                })
             }
         })
     }
 
     poolTask() {
-        if (this.queue.length && this.max) {
-            this.max--
-            this.runTask(this.queue.shift())
+        // 拉取新任务并执行 并且resolve任务的返回值
+        if (this.taskList.length && this.max) {
+            this.max++
+            const {
+                task: fn,
+                args: arg,
+                resolve: taskAResolve
+            } = this.taskList.shift()
+            taskAResolve(this.runTask(fn, arg))
         }
     }
 
-    runTask(task) {
-        const res = Promise.resolve(task)
+    runTask(task, args) {
+        // 执行任务 返回任务结果
+        // 这里需要在任务的finally的回调中去拉取新任务，也就是说当一个任务执行完毕之后就去再拉一个新任务来
+        const res = task(args)
         res.finally(() => {
-            this.max++
+            this.max--
             this.poolTask()
         })
         return res
     }
 }
 
-  const task = timeout => new Promise((resolve) => setTimeout(() => {
-    resolve(timeout);
-  }, timeout))
+const taskArr = [1000, 3000, 200, 1300, 800, 2000];
+const asyncTask = timeout => new Promise(resolve => setTimeout(() => {
+    console.log(timeout)
+    resolve(timeout)
+}, timeout))
 
-  const taskList = [1000, 3000, 200, 1300, 800, 2000];
+const newTask = new ITaskPoll(2)
+async function runTask() {
+    console.time('time')
+    await Promise.all(taskArr.map(item => newTask.addTask(asyncTask, item)))
+    console.timeEnd('time')
+}
+runTask()
 
-const taskPoll = new TaskPoll(2)
-
-  async function startNoConcurrentControl() {
-    console.time('NO_CONCURRENT_CONTROL_LOG');
-    const res = await Promise.all(taskList.map(item => taskPoll.addTask(task(item))));
-    console.log(res)
-    console.timeEnd('NO_CONCURRENT_CONTROL_LOG');
-  }
-
-  startNoConcurrentControl();
+  

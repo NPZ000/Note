@@ -16,13 +16,16 @@ function minArray(arr) {
     let left = 0, right = arr.length - 1
     while (left < right) {
         let mid = left + Math.floor((right - left) / 2)
-        if (nums[mid] > nums[right]) {
+        if (arr[mid] > arr[right]) {
             left = mid + 1
-        } else if (nums[mid] < nums[right]) {
+        } else if (arr[mid] < arr[right]) {
+            // 这里为什么不是 mid - 1，因为此时的中位数很可能就是要找的那个数字，比如 4 5 1 2 3，mid 是 1，如果 mid - 1，就会把 1 给略过去
+            // 上面的当中位数大于右边界数的时候，他肯定不是要找的那个数字，所以可以直接把它忽略掉
             right = mid
         } else {
             right--
         }
     }
-    return nums[left]
+    return arr[left]
 }
+console.log(minArray([2,3,4,0,1]))

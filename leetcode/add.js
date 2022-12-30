@@ -29,12 +29,11 @@ function add(a, b) {
 }
 
 function IAdd(a, b) {
-    while (b) {
+    while(b) {
         const c = (a & b) << 1
         a ^= b
         b = c
     }
-
     return a
 }
 console.log(IAdd(1,-2))

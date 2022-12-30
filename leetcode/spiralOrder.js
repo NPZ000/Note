@@ -12,7 +12,7 @@ function spiralOrder(matrix) {
     // row 是行数 columns 是列数
     const rows = matrix.length, columns = matrix[0].length
     // 用来记录已经访问过的点
-    let visible = Array(rows).fill(0).map(item => Array(columns).fill(false))
+    let visible = Array(rows).fill([]).map(item => Array(columns).fill(false))
     // 总数
     const total = rows * columns
     // 记录结果的

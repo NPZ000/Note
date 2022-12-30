@@ -11,10 +11,13 @@ function constructorArr(arr) {
     const res = []
     // p保存 i 之前的乘积结果
     for (let i = 0, p = 1; i < arr.length; i++) {
+        // p 累计前面所有数的乘积
         res[i] = p
         p *= arr[i]
     }
     for(let i = arr.length - 1, p = 1; i >= 0; i--) {
+        // p 累计了 i 后面所有数的乘积
+        // res[i] 中已经放了 i 前面所有数的乘积
         res[i] *= p
         p *= arr[i]
     }

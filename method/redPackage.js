@@ -17,5 +17,23 @@ function redPackage(num, money) {
     return res
 }
 // for (let i = 0; i < 100; i++) {
-    console.log(redPackage(3, 10))
+    console.log(redPackage(2, 0.02))
 // }
+
+function redPag(num, money) {
+    const res = []
+    while(num > 1) {
+        const random = Math.random()
+        const randomMoney = random * (money / num * 2)
+        if (randomMoney < 0.01) {
+            randomMoney = 0.01
+        } else {
+            randomMoney = Math.round(randomMoney * 100) / 100
+        }
+        money -= randomMoney
+        num--
+        res.push(randomMoney)
+    }
+    res.push(Math.round(money * 100) / 100)
+    return res
+}

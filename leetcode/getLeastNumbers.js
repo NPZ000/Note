@@ -37,7 +37,7 @@ function getLeastNumber(arr, k) {
         const index = quickSort(begin, end)
         // 判断哨兵的位置
         if (index === k) {
-            return arr.slice(0, k)
+            return
         }
         if (index < k) {
             recur(index + 1, end)

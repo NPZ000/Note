@@ -40,7 +40,7 @@ function isBalanced1(root) {
         if (left === -1) return -1
         const right = height(root.right)
         if (right === -1) return -1
-        return Math.abs(left - right) <= 1 ? Math.max(left - right) + 1 : -1
+        return Math.abs(left - right) <= 1 ? Math.max(left, right) + 1 : -1
     }
 
     return height(root) !== -1
