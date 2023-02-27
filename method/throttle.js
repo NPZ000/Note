@@ -13,3 +13,14 @@ function throttle(fn, delay) {
         }
     }
 }
+
+function foo(fn, delay) {
+    let pre = Date.now()
+    return function(...args) {
+        const now = Date.now()
+        if (now - pre >= delay) {
+            fn.apply(this, args)
+            pre = now
+        }
+    }
+}

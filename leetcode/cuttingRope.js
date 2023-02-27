@@ -17,7 +17,7 @@ function cutRope(n) {
         // 切第一刀长度为 2
         for (let j = 2; j < i; j++) {
             // 切了第一刀之后是否还要再切
-            const cut = j * dp[i - j] // 还要切的情况 就乘dp数组里的结果
+            const cut = j * dp[i - j] // 还要切的情况 就乘dp数组里当长度为i-j的最大乘积
             const notCut = j * (i - j) // 不切的情况 直接乘剩下的长度
             const max = Math.max(cut, notCut) // 取两种情况的最大值
             dp[i] = Math.max(dp[i], max) // 取 j 为不同值时的最大值

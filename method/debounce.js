@@ -3,12 +3,10 @@
 // 应用场景 输入框的联想功能
 function debounce(fn, delay) {
     let timer = null
-    return function() {
-        const context = this
-        const args = arguments
+    return function(...args) {
         clearTimeout(timer)
         timer = setTimeout(() => {
-            fn.apply(context, args)
+            fn.apply(this, args)
         }, delay)
     }
 }

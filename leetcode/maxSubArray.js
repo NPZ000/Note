@@ -10,7 +10,7 @@
 function maxSubArray(nums) {
     const dp = [nums[0]]
     let max = 0
-    for (let i = 0; i < nums.length; i++) {
+    for (let i = 1; i < nums.length; i++) {
         // 要不要把当前值加入到之前的结果中 加的结果 和 单独的当前值 去最大
         dp[i] = Math.max(dp[i - 1] + nums[i], nums[i])
         // 更新最大值

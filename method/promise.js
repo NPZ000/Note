@@ -1,3 +1,5 @@
+const { type } = require("os")
+
 class IPromise {
     constructor(executor) {
         try {
@@ -130,12 +132,13 @@ class IPromise {
             let count = 0
             arr.forEach((item, index) => {
                 IPromise.resolve(item).then(res => {
+                    // 保存成功的返回值 如果全部成功就把结果resolve出去
                     result[index] = res
                     count++
                     if (count === arr.length) {
                         resolve(result)
                     }
-                }).catch(reject)
+                }).catch(reject) // 如果有一个失败 就直接 reject
             })
         })
     }
@@ -186,11 +189,13 @@ class IPromise {
             }
             const errList = []
             promiseList.forEach(item => IPromise.resolve(item).then(res => {
+                // 抛出第一个成功的结果
                 return resolve(res)
             }).catch(err => {
                 errList.push(err)
                 if (errList.length === promiseList.length) {
-                    return reject(errList)
+                    // 如果全部失败 就抛出一个错误
+                    return reject(new AggregateError(errList))
                 }
             }))
         })
@@ -214,3 +219,185 @@ const p = new IPromise((resolve, reject) => {
 p.then(res => {
     console.log(res)
 })
+
+class MyPromise {
+    constructor(executor) {
+        try {
+            executor(this.resolve, this.reject)
+        } catch(e) {
+            this.reject
+        }
+    }
+
+    status = 'pending'
+
+    value = null
+
+    reason = null
+
+    onFulfilledCallback = []
+
+    onRejectedCallback = []
+
+    resolve(value) {
+        if (this.status === 'pending') {
+            this.status = 'fulfiled'
+            this.value = value
+            while (this.onFulfilledCallback.length) {
+                this.onFulfilledCallback.shift()(value)
+            }
+        }
+    }
+
+    reject(reason) {
+        if (this.status === 'pending') {
+            this.status = 'rejected'
+            this.reason = reason
+            while (this.onRejectedCallback.length) {
+                this.onRejectedCallback.shift()(reason)
+            }
+        }
+    }
+
+    then(onFulfilled, onRejected) {
+        const realOnFulfilled = typeof onFulfilled === 'function' ? onFulfilled : value => value
+        const realOnRejected = typeof onRejected === 'function' ? onRejected : reason => {throw(reason)}
+
+        const promise2 = new MyPromise((resolve, reject) => {
+            const onFulfiledMicotask = () => {
+                queueMicrotask(() => {
+                    try {
+                        const x = realOnFulfilled(this.value)
+                        this.resolvePromise(x, promise2, resolve, reject)
+                    } catch(e) {
+                        reject(e)
+                    }
+                })
+            }
+
+            const onRejectedMicotask = () => {
+                queueMicrotask(() => {
+                    try {
+                        const x = realOnRejected(this.reason)
+                        this.resolvePromise(x, promise2, resolve, reject)
+                    } catch(e) {
+                        reject(e)
+                    }
+                })
+            }
+            if (this.status === 'fulfiled') {
+                onFulfiledMicotask()
+            } else if (this.status === 'rejected') {
+                onRejectedMicotask()
+            } else if (this.status === 'pending') {
+                this.onFulfilledCallback.push(onFulfiledMicotask)
+                this.onRejectedMicotask.push(onRejectedMicotask)
+            }
+        })
+    }
+
+    resolvePromise(x, promise, resolve, reject) {
+        if (x === promise) {
+            return reject(new Error())
+        }
+        if (x instanceof promise) {
+            return x.then(resolve, reject)
+        }
+        return resolve(x)
+    }
+
+    static resolve(parameter) {
+        if (parameter instanceof Promise) {
+            return parameter
+        }
+        return new Promise(resolve => {
+            resolve(parameter)
+        })
+    }
+
+    static reject(parameter) {
+        if (parameter instanceof Promise) {
+            return parameter
+        } 
+        return new Promise((resolve, reject) => {
+            reject(parameter)
+        })
+    }
+
+    static all(promiseList) {
+        return new Promise((resolve, reject) => {
+            if (promiseList.length === 0) {
+                return resolve([])
+            }
+            const res = []
+            let count = promiseList.lengt
+            promiseList.forEach((promise, index) => {
+                promise.then(value => {
+                    res[index] = value
+                    count--
+                    if (count === 0) {
+                        resolve(res)
+                    }
+                }).catch(reject)
+            })
+        })
+    }
+
+    static race(promiseList) {
+        return new Promise((resolve, reject) => {
+            if (promiseList.length === 0) {
+                return resolve([])
+            }
+            promiseList.forEach(promise => promise.then(resolve).catch(reject))
+        })
+    }
+
+    static allSettled(promiseList) {
+        return new Promise((resolve, reject) => {
+            if (promiseList.length === 0) {
+                return resolve([])
+            }
+            const result = []
+            let count = promiseList.length
+            promiseList.forEach((promise, index) => {
+                promise.then(res => {
+                    result[index] = {
+                        status: 'fullfiled',
+                        value: res
+                    }
+                    if (--count === 0) {
+                        resolve(result)
+                    }
+                }).ctach(err => {
+                    result[index] = {
+                        status: 'rejected',
+                        reason: err
+                    }
+                    if (--count) {
+                        resolve(result)
+                    }
+                })
+            })
+        })
+    }
+
+    any(promiseList) {
+        return new Promise((resolve, reject) => {
+            if (promiseList.length === 0) {
+                return reject(new Error())
+            }
+            const errorList = []
+            let count = promiseList.length
+            promiseList.forEach((promise, index) => {
+                promise.then(res => {
+                    resolve(res)
+                }).catch(err => {
+                    errorList[index] = err
+                    if (--count) {
+                        reject(new AggregateError(errorList))
+                    }
+                })
+            })
+        })
+    }
+}

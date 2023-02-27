@@ -37,4 +37,35 @@ const arr = [
     {id: 4, name: '部门4', pid: 3},
     {id: 5, name: '部门5', pid: 4},
 ]
-console.log(JSON.stringify(listToMap(arr)))
+// console.log(JSON.stringify(listToMap(arr)))
+
+function transform(list) {
+    let res = null
+    const map = {}
+    for (const item of list) {
+        const { id, pid } = item
+        if (!map[id]) {
+            map[id] = {
+                children: []
+            }
+        }
+        map[id] = {
+            ...item,
+            children: map[id].children
+        }
+        const newItem = map[id]
+        if (pid === 0) {
+            res = newItem
+        } else {
+            if (!map[pid]) {
+                map[pid] = {
+                    children: []
+                }
+            }
+            map[pid].children.push(newItem)
+        }
+    }
+    return res
+}
+
+console.log(JSON.stringify(transform(arr)))

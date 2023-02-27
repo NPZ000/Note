@@ -64,9 +64,9 @@
  * 以上就是 one 的计算过程
  * 然后再看 two 的计算过程 two 的计算要在 one 的计算结果的基础上
  * 先来看一下计算 one 状态的变化前后对比  注意这里是只有 one 变了 two 还没变
- * change after
+ * change before
  *  00 01 10
- * chang before
+ * chang after
  *  01 00 10
  * 现在把 two 和 one 的位置交换
  * 10 00 01

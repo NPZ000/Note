@@ -382,6 +382,7 @@ class ProxyImage {
     static DEFAULT_URL = 'xxxxx.url'
 
     constructor(targetImage) {
+        // 目标image 即PreloadImage实例
         this.targetImage = targetImage
     }
 
