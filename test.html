@@ -10,35 +10,134 @@
   <button id="debounce">点我防抖！</button>
 
   <script>
-    window.onload = function() {
-      // 1、获取这个按钮，并绑定事件
-      var myDebounce = document.getElementById("debounce");
-      const debounceed = debounce(sayDebounce)
-      myDebounce.addEventListener("click", () => debounceed(1,2));
-    }
+//      console.time('耗时1')
+//    for (let i = 1; i <= 1000; i++) {
+//      document.body.innerHTML = document.body.innerHTML + `<div>${i}</div>`
+//    }
+//    console.timeEnd('耗时1') // 292
 
-    // 2、防抖功能函数，接受传参
-    function debounce(fn) {
-      // 4、创建一个标记用来存放定时器的返回值
-      let timeout = null;
-      return function() {
-        // 5、每次当用户点击/输入的时候，把前一个定时器清除
-        clearTimeout(timeout);
-        // 6、然后创建一个新的 setTimeout，
-        // 这样就能保证点击按钮后的 interval 间隔内
-        // 如果用户还点击了的话，就不会执行 fn 函数
-        timeout = setTimeout(() => {
-          fn.apply(this, arguments);
-        }, 1000);
-      };
-    }
+//     console.time('耗时2')
+//    let str = ''
+//    for (let i = 1; i <= 1000; i++) {
+//      str += `<div>${i}</div>`
+//    }
+//    document.body.innerHTML = str
+//    console.timeEnd('耗时2') // 0.9
 
-    // 3、需要进行防抖的事件处理
-    function sayDebounce(a, b) {
-      // ... 有些需要防抖的工作，在这里执行
-      console.log("防抖成功！", a, b);
-    }
+//     console.time('耗时3')
+//    const arr = []
+//    for (let i = 1; i <= 1000; i++) {
+//      arr.push(`<div>${i}</div>`)
+//    }
+//    document.body.innerHTML = arr.join('')
+//    console.timeEnd('耗时3') // 1.0
 
-  </script>
+//     console.time('耗时4')
+//    for (let i = 1; i <= 1000; i++) {
+//      const oDiv = document.createElement('div')
+//      // 更灵活
+//      oDiv.innerHTML = i
+//      document.body.appendChild(oDiv)
+//    }
+//    console.timeEnd('耗时4') // 2.9
+
+//    function throttle(func, wait) {
+//     // your code here
+//     let waiting = false, lastArgs = null
+//     return function(...args) {
+//       if (!waiting) {
+//         func.apply(this, args)
+//         waiting = true
+//         const timeout = () => setTimeout(() => {
+//           waiting = false
+//           if (lastArgs) {
+//             console.log('lastargscall=', lastArgs)
+//             func.apply(this, lastArgs)
+//             waiting = true
+//             lastArgs = null
+//             timeout()
+//           }
+//         }, wait)
+//         timeout()
+//       } else {
+//         lastArgs = args
+//         console.log('laseArgs=',lastArgs)
+//       }
+//     }
+//   }
+//   const run = (input) => {
+//     currentTime = 0
+//     const calls = []
+  
+//     const func = (arg) => {
+//        calls.push(`${arg}@${currentTime}`)
+//     }
+  
+//     const throttled = throttle(func, 3)
+//     debugger
+//     input.forEach((call) => {
+//        const [arg, time] = call.split('@')
+//        setTimeout(() => throttled(arg), time)
+//     })
+//     return calls
+//   }
+  
+//   console.log('===',run(['A@0', 'B@2', 'C@3']))
+
+// This is a JavaScript coding problem from BFE.dev 
+
+/**
+ * @param { (...args: any[]) => any } fn
+ * @returns { (...args: any[]) => any }
+ */
+ function curry(fn) {
+  // your code here
+  return function curryInner(...args) {
+    const realArgs = args.reduce((list, cur) => {
+      console.log('12',cur, curry.placeholder, fn.length)
+      if (cur !== curry.placeholder) {
+        console.log('14',cur)
+        list.push(cur)
+      }
+      return list
+    }, [])
+    console.log('19',realArgs, args)
+    if (realArgs.length >= fn.length) {
+      console.log('21', fn)
+      debugger
+      return fn.apply(this, realArgs)
+    } else {
+      return (...args2) => {
+        console.log('24----',args2)
+        console.log(args)
+        const curArgs = args.map((item, index) => {
+          if (item === curry.placeholder && args2.length) {
+            return args2.shift()
+          }
+          return item
+        })
+        console.log('curArgs', curArgs, args2)
+        return curryInner(...curArgs, ...args2)
+      }
+    }
+  }
+}
+
+// (_,_,3,4)(1,_)(2,5)
+curry.placeholder = Symbol()
+
+const  join = (a, b, c) => {
+   return `${a}_${b}_${c}`
+}
+
+const curriedJoin = curry(join)
+const _ = curry.placeholder
+
+console.log(curriedJoin(_,_,3,4)(1,_)(2,5))
+
+
+
+
+</script>
 </body>
 </html>
