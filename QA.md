@@ -67,6 +67,19 @@
 
 - Q：浏览器事件循环机制
 - A：宏任务&微任务执行顺序需要再复习🚧
+  1.	事件循环的核心流程：
+	•浏览器的事件循环主要负责协调 同步任务、宏任务 和 微任务。
+	•同步任务 会立即执行，运行在主线程上。
+	•遇到 异步任务 时，分为两类队列：宏任务队列（setTimeout、setInterval 等）和微任务队列（Promise.then、MutationObserver、queueMicrotask 等）。
+2.执行顺序：
+	•主线程先执行所有同步任务。
+	•然后检查并执行微任务队列中的所有任务，直到清空。
+	•微任务队列清空后，从宏任务队列中取出第一个任务并执行。
+	•再次检查并执行微任务队列，直到清空。
+	•重复以上过程，形成事件循环。
+3.宏任务与微任务的区别：
+	•宏任务：由浏览器提供的任务类型，如 setTimeout、setInterval、setImmediate、requestAnimationFrame 等。
+	•微任务：优先级更高，由 JavaScript 语言本身提供，主要包括 Promise.then、MutationObserver 和 queueMicrotask。
 同步代码执行完之后执行的是微任务，微任务执行完之后再执行一个宏任务
 	```js
 	async function async1() {
@@ -117,6 +130,24 @@
 	console.log(A.type);  //构造函数的原型指向的是Function.prototype
 	console.log(a.type); // 现在a是个对象了，对象的原型指向的是Object.prototype
 	```
+ - Q：闭包
+ - A：闭包是指 一个函数能够记住它定义时的词法作用域，即使这个函数在其词法作用域之外被调用。
+换句话说，闭包可以让内部函数访问到外部函数作用域中的变量，甚至当外部函数已经执行完毕后，这些变量依然存在于内存中。
+- 应用场景
+ 1. 使用闭包实现类似类的私有变量和方法。
+```js
+function Counter() {
+    let count = 0; // 私有变量
+    return {
+        increment() { count++; },
+        getCount() { return count; }
+    };
+}
+
+const counter = Counter();
+counter.increment();
+console.log(counter.getCount()); // 输出 1
+```
 
 - Q：css盒模型？  标准的盒子模型 宽度=content的width 怪异盒子模型的宽度 = content + paddiing + border
 - A：理解OK
