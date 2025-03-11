@@ -1,3 +1,9 @@
-const a = new Map()
-a.set('x', 1)
-console.log(Array.from(a))
+const obj = {
+    name: 'Alice',
+    greet: function() {
+      console.log(this.name);
+    }
+  };
+  const greetFn = obj.greet;
+  greetFn(); // 输出？
+
