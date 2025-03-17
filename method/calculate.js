@@ -25,24 +25,24 @@ function calculate(str) {
     }
     return tool(+a, +b, type)
 }
-console.log(calculate('11+1-22+33'))
+// console.log(calculate('11+1-22+33'))
 
 function foo(str) {
-    let num = 0, sign = 1, result = 0
-    for (const char of str) {
-        if (char === '+') {
-            result += num * sign
+    let num = 0, res = 0, sign = 1
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] === '+') {
+            res += num * sign
             num = 0
             sign = 1
-        } else if (char === '-') {
-            result += num * sign
+        } else if (str[i] === '-') {
+            res += num * sign
             num = 0
             sign = -1
-        } else if (!isNaN(parseInt(char))) {
-            num = num * 10 + parseInt(char)
+        } else {
+            num = num * 10 + parseInt(str[i])
         }
     }
-    result += sign * num
-    return result
+    res += num * sign
+    return res
 }
 console.log(foo('11+22-12'))

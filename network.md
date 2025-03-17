@@ -142,7 +142,7 @@ ps: js 引擎线程和 GUI 线程互斥，因为 js 是可以操作 dom 的
 ### Cookie
 HTTP 是无状态的协议，每个请求都是独立的，服务端不知道客户端的信息，也不知道两次请求的发送者是不是同一个人，cookie 就是用来解决这个问题，每次请求的时候带上cookie让服务端知道是谁请求的它；存储在客户端，不可跨域。
 name=value:要保存的数据
-domain：所属的域名
+domain：所属的域名，每个 cookie 都会绑定单一的域名，无法在别的域名下获取使用，一级域名和二级域名之间是允许共享使用的（靠的是 domain）
 path： 在哪个路径下生效
 maxAge： 失效的时间
 expires： 过期的时间
@@ -153,7 +153,7 @@ ps： 如果没有设置时效，就会在客户端关闭的时候被清除
 存储在服务端，生成一个sessionId返回客户端，客户端把它放在cookie，之后请求的时候携带，服务端拿到之后查找对应的session信息，来验证用户的身份
 
 ### cookie 和 session 的区别
-cookie存在客户端，session放在服务器，
+cookie存在客户端；session放在服务器，占内存
 cookie只能存字符串数据，session无限制
 cookie可以设置长时间保持，session时间短，客户端关闭或者session超时都会失效
 存储大小不同：cookie只能4k session无限制

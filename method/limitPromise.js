@@ -25,8 +25,8 @@ class ITaskPoll {
 
     poolTask() {
         // 拉取新任务并执行 并且resolve任务的返回值
-        if (this.taskList.length && this.max) {
-            this.max++
+        if (this.taskList.length) {
+            // this.max--
             const {
                 task: fn,
                 args: arg,
@@ -41,7 +41,7 @@ class ITaskPoll {
         // 这里需要在任务的finally的回调中去拉取新任务，也就是说当一个任务执行完毕之后就去再拉一个新任务来
         const res = task(args)
         res.finally(() => {
-            this.max--
+            // this.max++
             this.poolTask()
         })
         return res
@@ -50,14 +50,15 @@ class ITaskPoll {
 
 const taskArr = [1000, 3000, 200, 1300, 800, 2000];
 const asyncTask = timeout => new Promise(resolve => setTimeout(() => {
-    console.log(timeout)
+    // console.log(timeout)
     resolve(timeout)
 }, timeout))
 
 const newTask = new ITaskPoll(2)
 async function runTask() {
     console.time('time')
-    await Promise.all(taskArr.map(item => newTask.addTask(asyncTask, item)))
+    const res = await Promise.all(taskArr.map(item => newTask.addTask(asyncTask, item)))
+    console.log(res)
     console.timeEnd('time')
 }
 runTask()

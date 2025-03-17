@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #virtual-list {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    .list-item {
+      box-sizing: border-box;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .phantom {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="virtual-list">
+    <div id="phantom-top" class="phantom"></div>
+    <div id="content"></div>
+    <div id="phantom-bottom" class="phantom"></div>
+  </div>
+
+  <script>
+    // 修复版本：动态高度虚拟列表
+    const CONFIG = {
+      estimatedHeight: 50,
+      buffer: 8, // 增大缓冲数量
+      totalItems: 1000
+    };
+
+    // 数据生成（包含动态内容）
+    const data = Array.from({ length: CONFIG.totalItems }, (_, i) => ({
+      id: i,
+      text: `Item ${i + 1} - ${'动态内容 '.repeat(Math.floor(Math.random() * 5 + 1))}`,
+      image: i % 10 === 0 ? 'https://picsum.photos/200/100' : null // 10%项包含图片
+    }));
+
+    // 状态管理
+    const state = {
+      itemHeights: new Array(CONFIG.totalItems).fill(CONFIG.estimatedHeight),
+      prefixSum: [],
+      totalHeight: 0,
+      currentStart: 0,
+      currentEnd: 0,
+      resizeObserver: null
+    };
+
+    // 初始化累计高度
+    function updatePrefixSum() {
+      state.prefixSum = state.itemHeights.reduce((acc, h, i) => {
+        acc.push(i === 0 ? h : acc[i - 1] + h);
+        return acc;
+      }, []);
+      state.totalHeight = state.prefixSum[CONFIG.totalItems - 1] || 0;
+    }
+    updatePrefixSum();
+
+    // DOM元素
+    const container = document.getElementById('virtual-list');
+    const phantomTop = document.getElementById('phantom-top');
+    const phantomBottom = document.getElementById('phantom-bottom');
+    const content = document.getElementById('content');
+
+    // 关键修复1：使用ResizeObserver监听尺寸变化
+    state.resizeObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+        const index = parseInt(entry.target.dataset.index);
+        const newHeight = entry.contentRect.height;
+        if (state.itemHeights[index] !== newHeight) {
+          state.itemHeights[index] = newHeight;
+          updatePrefixSum();
+          adjustScrollPosition();
+        }
+      });
+    });
+
+    // 关键修复2：滚动位置自动修正
+    let isAdjusting = false;
+    function adjustScrollPosition() {
+      if (isAdjusting) return;
+      isAdjusting = true;
+      
+      const beforeHeight = state.prefixSum[state.currentEnd] || 0;
+      const scrollTop = container.scrollTop;
+      
+      requestAnimationFrame(() => {
+        phantomBottom.style.height = `${state.totalHeight - (state.prefixSum[state.currentEnd] || 0)}px`;
+        container.scrollTop = scrollTop + (state.prefixSum[state.currentEnd] - beforeHeight);
+        isAdjusting = false;
+      });
+    }
+
+    // 计算可见区域
+    function calculateRange() {
+      const scrollTop = container.scrollTop;
+      const visibleHeight = container.clientHeight;
+
+      // 二分查找起始索引
+      let start = 0, end = CONFIG.totalItems - 1;
+      while (start <= end) {
+        const mid = (start + end) >> 1;
+        if (state.prefixSum[mid] < scrollTop) {
+          start = mid + 1;
+        } else {
+          end = mid - 1;
+        }
+      }
+      const startIdx = Math.max(0, start - 1 - CONFIG.buffer);
+
+      // 计算结束索引
+      let endIdx = start;
+      const maxScroll = scrollTop + visibleHeight;
+      while (endIdx < CONFIG.totalItems && state.prefixSum[endIdx] < maxScroll) {
+        endIdx++;
+      }
+      endIdx = Math.min(CONFIG.totalItems - 1, endIdx + CONFIG.buffer);
+
+      return { startIdx, endIdx };
+    }
+
+    // 渲染逻辑
+    function renderItems(startIdx, endIdx) {
+      const pool = new Map(Array.from(content.children).map(node => 
+        [node.dataset.index, node]
+      ));
+
+      // 创建或复用节点
+      for (let i = startIdx; i <= endIdx; i++) {
+        const key = String(i);
+        let node = pool.get(key);
+        if (!node) {
+          node = document.createElement('div');
+          node.className = 'list-item';
+          node.dataset.index = key;
+          content.appendChild(node);
+          state.resizeObserver.observe(node); // 开始监听新元素
+        }
+        
+        // 更新内容
+        if (node.textContent !== data[i].text) {
+          node.textContent = data[i].text;
+        }
+        
+        // 动态加载图片
+        if (data[i].image && !node.querySelector('img')) {
+          const img = new Image();
+          img.src = data[i].image;
+          img.style.maxWidth = '100%';
+          img.onload = () => {
+            node.appendChild(img);
+            state.resizeObserver.unobserve(node);
+            state.resizeObserver.observe(node); // 强制重新测量
+          };
+        }
+        
+        pool.delete(key);
+      }
+
+      // 移除多余元素
+      pool.forEach(node => {
+        content.removeChild(node);
+        state.resizeObserver.unobserve(node);
+      });
+    }
+
+    // 滚动处理
+    let isScrolling = false;
+    function handleScroll() {
+      if (isScrolling) return;
+      isScrolling = true;
+      
+      const { startIdx, endIdx } = calculateRange();
+      if (startIdx !== state.currentStart || endIdx !== state.currentEnd) {
+        renderItems(startIdx, endIdx);
+        state.currentStart = startIdx;
+        state.currentEnd = endIdx;
+        
+        // 更新占位元素
+        phantomTop.style.height = `${state.prefixSum[startIdx] || 0}px`;
+        phantomBottom.style.height = `${state.totalHeight - (state.prefixSum[endIdx] || 0)}px`;
+      }
+      
+      isScrolling = false;
+    }
+
+    // 初始化
+    container.addEventListener('scroll', () => {
+      requestAnimationFrame(handleScroll);
+    });
+    handleScroll(); // 初始渲染
+  </script>
+</body>
+</html>

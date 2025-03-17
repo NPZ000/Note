@@ -1,44 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>防抖</title>
+  <style>
+    #virtual-list {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    .list-item {
+      height: 30px; /* 必须与JS中的itemHeight一致 */
+      line-height: 30px;
+      box-sizing: border-box;
+      padding: 0 15px;
+    }
+    .phantom {
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-  <button id="debounce">点我防抖！</button>
+  <div id="virtual-list">
+    <div id="phantom-top" class="phantom"></div>
+    <div id="content"></div>
+    <div id="phantom-bottom" class="phantom"></div>
+  </div>
 
   <script>
-    window.onload = function() {
-      // 1、获取这个按钮，并绑定事件
-      var myDebounce = document.getElementById("debounce");
-      const debounceed = debounce(sayDebounce)
-      myDebounce.addEventListener("click", () => debounceed(1,2));
+    // 配置参数
+    const CONFIG = {
+      itemHeight: 30,     // 列表项高度（必须与CSS一致）
+      buffer: 5,          // 渲染缓冲项数
+      totalItems: 1000    // 总数据量
+    };
+
+    // 生成测试数据
+    const data = Array.from({ length: CONFIG.totalItems }, (_, i) => 
+      `Item ${i + 1} - ${Math.random().toString(36).substr(2, 5)}`
+    );
+
+    // DOM元素引用
+    const container = document.getElementById('virtual-list');
+    const content = document.getElementById('content');
+    const phantomTop = document.getElementById('phantom-top');
+    const phantomBottom = document.getElementById('phantom-bottom');
+
+    // 初始化总高度
+    const totalHeight = CONFIG.itemHeight * CONFIG.totalItems;
+    phantomTop.style.height = '0px';
+    phantomBottom.style.height = `${totalHeight}px`;
+
+    // 滚动处理（修复自动滚动的关键）
+    let isUpdating = false;
+    let currentStartIdx = 0;
+    let currentEndIdx = 0;
+
+    function updateList() {
+      if (isUpdating) return;
+      isUpdating = true;
+
+      const scrollTop = container.scrollTop;
+      const visibleHeight = container.clientHeight;
+
+      // 计算可见区域（含缓冲）
+      const startIdx = Math.max(
+        0,
+        Math.floor(scrollTop / CONFIG.itemHeight) - CONFIG.buffer
+      );
+      
+      const endIdx = Math.min(
+        data.length,
+        Math.ceil((scrollTop + visibleHeight) / CONFIG.itemHeight) + CONFIG.buffer
+      );
+
+      // 仅当索引变化时更新DOM
+      if (startIdx !== currentStartIdx || endIdx !== currentEndIdx) {
+        // 记录当前滚动位置
+        const beforeUpdateScrollTop = container.scrollTop;
+        
+        // 更新占位元素
+        phantomTop.style.height = `${startIdx * CONFIG.itemHeight}px`;
+        phantomBottom.style.height = 
+          `${totalHeight - endIdx * CONFIG.itemHeight}px`;
+
+        // 渲染新项
+        renderItems(data.slice(startIdx, endIdx));
+        
+        // 关键修复：防止DOM更新后滚动位置变化
+        if (container.scrollTop !== beforeUpdateScrollTop) {
+          container.scrollTop = beforeUpdateScrollTop;
+        }
+
+        currentStartIdx = startIdx;
+        currentEndIdx = endIdx;
+      }
+      
+      isUpdating = false;
     }
 
-    // 2、防抖功能函数，接受传参
-    function debounce(fn) {
-      // 4、创建一个标记用来存放定时器的返回值
-      let timeout = null;
-      return function() {
-        // 5、每次当用户点击/输入的时候，把前一个定时器清除
-        clearTimeout(timeout);
-        // 6、然后创建一个新的 setTimeout，
-        // 这样就能保证点击按钮后的 interval 间隔内
-        // 如果用户还点击了的话，就不会执行 fn 函数
-        timeout = setTimeout(() => {
-          fn.apply(this, arguments);
-        }, 1000);
-      };
+    // DOM复用渲染
+    function renderItems(items) {
+      const pool = Array.from(content.children);
+      
+      items.forEach((text, index) => {
+        let item = pool[index] || document.createElement('div');
+        if (!pool[index]) {
+          item.className = 'list-item';
+          content.appendChild(item);
+        }
+        if (item.textContent !== text) {
+          item.textContent = text; // 避免不必要的更新
+        }
+      });
+
+      // 移除多余元素
+      while (content.children.length > items.length) {
+        content.removeChild(content.lastChild);
+      }
     }
 
-    // 3、需要进行防抖的事件处理
-    function sayDebounce(a, b) {
-      // ... 有些需要防抖的工作，在这里执行
-      console.log("防抖成功！", a, b);
-    }
+    // 优化滚动监听
+    container.addEventListener('scroll', () => {
+      requestAnimationFrame(updateList);
+    });
 
+    // 初始渲染
+    updateList();
   </script>
 </body>
 </html>

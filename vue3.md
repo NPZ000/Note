@@ -44,11 +44,23 @@ vue2 中是用 data 方法返回了一个对象，在 vue3 中是用 ref 和 rea
 在 vue3 中，computed 是一个函数，接收一个 get 函数和一个 set 函数，如果只传一个，就默认是 get 函数，那么计算出来的值就是个只读的，如果两个都传，就需要放在一个对象里，分别标明是 get 和 set，函数返回一个 ref 对象，所以读取和写入值的时候还是需要通过value 属性的  
 7. watch
 在 vue2 中，watch 是一个对象，其中是自定义函数
-在 vue3 中，watch 是一个函数，接收三个参数，第一个参数是要监听的值，可以是ref / reactive / 函数返回的值或者他们组成的数组，第二个参数是回调函数，函数接收的参数是新值和旧值，第三个参数是一些设置选项，侦听的时机等
+在 vue3 中，watch 是一个函数，接收三个参数，第一个参数是要监听的值，可以是ref / reactive / 函数返回的值(reactive对象的属性)或者他们组成的数组，第二个参数是回调函数，函数接收的参数是新值和旧值，第三个参数是一些设置选项，侦听的时机等（immediate: true - 立即执行
 8. watchEffect
 是一个函数，接收两个参数，第一个是要运行的副作用函数，默认会立即执行，第二个参数用来调整副作用的刷新时机和调试，默认副作用是在组件渲染之前执行的，设置为flush：post 可以在组件下渲染之后执行
 9. watchPostEffect 
 同 watchEffect ，是在组件更新之后执行的，可以拿到更新之后的dom
+10. watch vs watchEffect
+watch需要显示的制定要监听的数据，并且可以拿到oldvalue，不设置immediate就不会立即执行，watchEffect不需要显示指定要监听的数据，会自动追踪访问到的响应式属性，拿不到oldvalue，会立即执行
+11. 使用监听器拿到更新后的dom
+设置flush: post, 或者使用watchPostEffect
+12. 路由跳转
+使用useRouter
+13. mixin vs hooks
+mixin 容易发生属性冲突，且无法向它传递参数，
+hooks
+14. v-for & v-if
+vue2 中 v-for 优先于 v-if
+vue3 中 v-if 优先于 v-for
 
 
 ## vue2 的 diff 流程
@@ -83,3 +95,99 @@ vue2 中是用 data 方法返回了一个对象，在 vue3 中是用 ref 和 rea
 1. 首先组件文件写好，组件内 props 接收配置
 2. 然后再一个js文件，用来编写生成组件的方法，首先生成一个容器，用来放组件内容，根据接收到参数组装组件需要的props，然后把引进来的组件和 props 传入createVNode 方法，生成组件的vnode，然后把这个vnode 调用 render 方法渲染到刚才创建的容器内，然后设置定时器，一段时间之后销毁弹框，再次调用render 方法，传一个 null 进去，这就是生成组件的方法，
 3. 然后把这个方法挂在在全局上，app.config.properties，在组件内调用的时候，需要先用 getCurrentInstance 方法获取到当前组件的实力，然后挂载到原型上的方法在 组件实例的 proxy 属性上
+
+
+## 组件通信
+1. props
+```js
+// parent
+<child :a='1' />
+
+// child
+const props = defineProps([{a: String}])
+// 如果要解构 props 就需要对他toRefs一下
+console.log(props.a)
+```
+2. emit
+```js
+// parent
+<child @myClick='handleClick' />
+
+// child
+const emits = defineEmits(['myClick'])
+
+emits('myClick', 'valus')
+```
+
+3. expose/ref
+```js
+//child
+defineExpose({
+    name: 'a',
+    handle: () => {
+
+    }
+})
+
+// parent
+<child ref='child'>
+const child = ref(null)
+child.value.name
+child.value.handle()
+```
+
+4. attrs
+接收所有没有被props和emits消费掉的透传下来的属性
+中间的组件可以使用v-bind=‘$attrs’ 继续向下透传
+```js
+// parent
+<child :a='1' :b='2'>
+
+// child
+defineProps({
+    a: String
+})
+
+const attrs = useAttrs()
+attrs.b
+
+```
+
+5. v-model
+```js
+// parent
+<child v-model:key='key'>
+
+//child
+const props = defineProps(['key'])
+const emits = defineEmits(['update:key'])
+
+emits('update:key', 'new key')
+```
+
+6. provide/inject
+```js
+//parent
+provide(key, value)
+
+//child
+inject(key) // value
+```
+
+7. vuex
+```js
+const store = useStore()
+const count = computed(() => store.state.count)
+```
+
+8. mitt
+需要安装引入
+```js
+// a
+mitt.emit('a', 1)
+
+// b
+mitt.on('a', a => {
+    console.og(a)
+})
+```

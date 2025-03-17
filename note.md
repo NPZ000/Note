@@ -150,6 +150,13 @@ Transform
 新引入的伪元素不支持旧的单写法
 before在前面插入 after 在后面插入
 
+#### 伪类和伪元素的区别
+伪类是：操控已有元素的状态，为已有元素的特定状态或结构位置添加样式，
+    :hover
+    :last-child
+伪元素：操控元素的某个部分，比如为元素创建虚拟的子元素或者修改元素特定内容的部分
+    ::before {content: '▶️'}
+    :: first-letter {color: 'red'}
 #### 手写动画最小时间间隔
 多数显示器默认频率时60hz 即一秒刷新60次  所以理论上最小间隔为 1/ 60 * 1000ms
 
@@ -226,6 +233,7 @@ foo() // 'red'
 2. 是否是call apply bind 绑定，如果是的话，那么指向的是绑定的对象
 3. 是否被某个方法或者对象所拥有，是的话，就指向那么方法或者对象
 4. 都不是的话，就默认指向全局
+##### this的调用取决调用的方式，而不是被定义的位置，独立的回调函数容易导致this丢失，比如settimeout
 
 #### window对象和document对象
 window对象是指浏览器打开的窗口
@@ -256,114 +264,149 @@ parseInt('3', 2)
 第二个：转换'2',radix 为 1，对于 radix 参数，还有一条规则，那就是必须是 2 - 36 中间的数，如果不是，直接返回 NaN，所以这里结果就是 NaN
 第三个：转换'3'，radix 为 2, 因为 2 进制的数中只有0 和 1，所以这里没法解析，返回了 NaN
 
-#### 闭包
-有权访问另一个函数作用域中的变量的函数，创建闭包最常用的方式就是在一个函数内部创建一个匿名函数，然后返回这个匿名函数
-```javascript
-function foo() {
-  const name = 'tom'
-  return function () {
-    return name
-  }
-}
-const resName = foo()
-console.log(resName())
-```
-看这段代码，本来我们在外面是没法拿到那个 name 的值，但是里面的匿名函数可以拿到。执行 foo 方法，返回里面的匿名函数，然后再执行这个匿名函数，就拿到了里面这个 name 的值，这就是闭包的机制。
-闭包有什么问题呢
-先来说一说闭包和 this 的碰撞
-```javascript
-var name = 'window'
-const obj = {
-  name: 'Npz',
-  getName() {
-    return function () {
-      return this.name
-    }
-  }
-}
-obj.getName()()  // 'window'
-```
-结果为什么是 window， 为什么里面的匿名函数没有拿到 obj 的 name，这里再提一嘴 this 的指向，他是在运行时决定的，不是声明时决定的，这里的匿名函数被返回之后就和 obj 没关系了（这样说好像不太严谨，暂且这么理解吧），这里和 obj 有关系的是 getName，最后一行代码相当于
-```javascript
-const func = obj.getName()
-func()
-```
-这样就可以很直观的看出来，这个函数执行的时候是不依赖任何人的，是独立执行的，所以他的 this 指向的就是全局的 window。
-那我们怎么可以让里面这个匿名函数拿到 obj 的 name？
-按照闭包的原理，匿名函数是可以访问到外层父函数（getName）的变量的，然后 getName 的 this 是指向 obj 的，那我们可以在 getName 函数内部拿到 obj 的 this，并存起来，然后在匿名函数内部拿到这个 this
-```javascript
-var name = 'window'
-const obj = {
-  name: 'Npz',
-  getName() {
-    const that = this // 拿到 obj 的 this 存起来
-    return function () {
-      return that.name // 这个 that 就是 obj 的 this
-    }
-  }
-}
-obj.getName()()  // 'Npz'
-```
-除了这个还有什么办法呢
-```javascript
-var name = 'window'
-const obj = {
-  name: 'Npz',
-  getName() {
-    return (function () {
-      return this.name 
-    }).apply(this)
-  }
-}
-const resName = obj.getName()
-console.log(resName) // 'Npz'
-```
-通过 call 或者 apply 显式的绑定 this，或者 bind 硬绑定也可以
-还有一种办法，我们都知道，箭头函数的 this 是继承自父函数的，如果返回的匿名函数是个箭头函数就也是可以的
-```javascript
-var name = 'window'
-const obj = {
-  name: 'Npz',
-  getName() {
-    return () => {
-      return this.name 
-    }
-  }
-}
-const resName = obj.getName()()  
-console.log(resName)
-```
-按照我们刚才说的，返回的这个匿名的箭头函数的 this 就指向 getName，而 getName 的 this 又指向了 obj，所以这里的结果就是 'Npz'
-再说回来，闭包存在什么问题呢？
-我们都知道，按照内存回收的机制，每个函数在执行完毕之后，都会进行销毁和内存回收，但是闭包不会这样，还看最开始的闭包代码
-```javascript
-function foo() {
-  const name = 'tom'
-  return function () {
-    return name
-  }
-}
-const resName = foo()
-console.log(resName())
-```
-本来 foo 方法执行完毕之后就会被销毁，里面的变量也都会被销毁，但是这里内部返回的匿名函数引用了 foo 函数内部的变量，所以这里就不能对这个引用的变量进行回收，因为之后还可能会引用他，这样就造成了内存泄漏的问题。如果要解决这个问题，就需要对匿名函数进行手动释放。
-闭包可以干什么呢？
-1. 创建私有变量
-```javascript
-function myObj() {
-  const name = 'Npz'
+### 闭包：定义、机制与典型应用场景
 
-  function getName() {
-    return name
+---
+
+#### **一、闭包核心定义**
+**闭包** (Closure) 是能**持续访问其词法作用域内变量**的函数，即使这些变量在其外层函数已执行结束。本质上，闭包突破了函数作用域的固有生命周期限制，实现了作用域的持久化。典型的闭包通过**内嵌函数返回或传递**形成。
+
+```javascript
+function createClosure() {
+  const hiddenVar = 'Secret';
+  return function() {  // 内嵌函数形成闭包
+    return hiddenVar;  // 可访问外层已"销毁"的变量
+  };
+}
+
+const getHidden = createClosure();
+console.log(getHidden()); // > 'Secret'
+```
+
+---
+
+#### **二、闭包与 `this` 的动态性冲突**
+闭包中 `this` 的指向与实际调用环境紧密相关，其**动态绑定规则**可能导致与预期不符的现象，需特别注意。
+
+##### **案例：闭包导致的 `this` 丢失**
+```javascript
+const obj = {
+  name: 'Npz',
+  getName() {
+    return function() {
+      return this.name; 
+    };
   }
+};
+const getName = obj.getName();
+console.log(getName()); // > 'window' 或全局对象的 name 属性
+```
+
+##### **根源分析**
+- **`this` 动态绑定**：普通函数中的 `this` 由**调用时的上下文**决定，此时闭包函数作为独立函数调用 (`getName()`) ，其 `this` 默认绑定到全局对象。
+- **词法作用域与 `this` 的区别**：闭包捕获的是外层作用域的**局部变量**，但 `this` 是函数调用时的动态属性，**不会沿作用域链传递**。
+
+##### **解决方案**
+1. **捕获外层 `this` 为变量（闭包中的闭包）**
+   ```javascript
+   getName() {
+     const objThis = this; // 捕获 obj 的 this 为词法变量
+     return function() { 
+       return objThis.name; 
+     };
+   }
+   ```
+
+2. **显式绑定 `this`（`call`/`apply`/`bind`）**
+   ```javascript
+   getName() {
+     return (function() { 
+       return this.name; 
+     }).bind(this); // 硬绑定 this
+   }
+   ```
+
+3. **箭头函数词法绑定 `this`**
+   ```javascript
+   getName() {
+     return () => this.name;  // 箭头函数继承外层函数的 this
+   }
+   ```
+
+---
+
+#### **三、闭包的内存泄漏：原理与防范**
+
+##### **内存驻留机制**
+- **正常函数销毁**：外层函数执行完毕后，若无引用指向其变量，内存会被回收。
+- **闭包的特殊性**：**被闭包引用的外层变量**会随闭包一同持久化，即使外层函数已结束。
+
+```javascript
+function heavyClosure() {
+  const bigData = new Array(1e6).fill('⚠️'); // 内存密集型数据
+  return () => bigData.length;
+}
+const dataReader = heavyClosure(); // bigData 驻留内存
+```
+
+##### **安全隐患**
+闭包过度使用可能导致无法释放的**长生命周期变量**占用内存，尤其在频繁调用的场景（如事件监听）中易引发性能问题。
+
+##### **解决策略**
+- **谨慎设计闭包作用域**：避免无必要的大数据集被闭包捕获。
+- **手动断联引用**：主动释放不再需要的闭包。
+  ```javascript
+  dataReader = null; // 解除闭包引用，触发垃圾回收
+  ```
+
+---
+
+#### **四、闭包的高级应用场景（补充点）**
+
+##### **1. 模块化与私有变量封装**
+通过闭包封装私有变量，暴露受限接口，实现信息隐藏（仿类私有字段）。
+```javascript
+function CounterModule() {
+  let count = 0;
   return {
-    getName
-  }
+    increment() { count++ },
+    get() { return count }
+  };
 }
-
-console.log(myObj().getName())
+const counter = CounterModule();
+counter.increment();
+console.log(counter.get()); // 1
 ```
-本来 myObj 里面的 name 我们在外面是访问不到的，但是我们在里面定义了一个函数，函数内部返回了 name，然后我们又把这个方法返回，我们在外面调用这个方法，就可以拿到里面那个 name 的值
+
+##### **2. 动态函数定制（函数工厂）**
+根据参数生成不同行为的函数，常用于配置化逻辑生成。
+```javascript
+function prefixLogger(prefix = '>') {
+  return (message) => console.log(`${prefix} ${message}`);
+}
+const errorLog = prefixLogger('[ERROR]');
+errorLog('DB Connection Failed'); // ⇒ [ERROR] DB Connection Failed
+```
+
+##### **3. 防抖与节流优化性能**
+利用闭包保存定时器状态，控制高频事件触发的执行频率。
+```javascript
+function debounce(fn, delay) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+window.addEventListener('resize', debounce(handleResize, 200));
+```
+
+---
+
+#### **五、闭包的底层视角（选读补充）**
+- **闭包的产生**：函数在创建时，JavaScript 引擎会为其关联一个 `[[Environment]]` 内部属性，指向**当前词法环境**。当闭包被调用时，引擎会通过该引用访问外层变量。
+- **优化策略**：现代引擎（如 V8）会对未被内层闭包引用的外部变量进行优化回收（如 `hiddenVar` 未被返回闭包引用则会被回收）。
+
 
 #### use strict
 严格模式，在严格模式下，js会以更严格的标准执行，比如
