@@ -369,12 +369,30 @@ destroyed 实例销毁之后 消除与其他组件所有的关联 事件监听�
 }
 
 组件内的守卫 直接在组件内定义
-beforeRouterEnter  在渲染该组件的对用路由被confirm时调用 此时不可获取组件实例this
-beforeRouterUpdate 当前路由改变 组件被复用时调用，比如在使用带动态参数的路径foo/:id  在foo/ 1 和foo/2 之间跳转 foo组件被复用了 此时就可以调用这个钩子
-beforeRouterLeave 在离开当前路由是调用
+beforeRouteEnter  在渲染该组件的对用路由被confirm时调用 此时不可获取组件实例this
+beforeRouteUpdate 当前路由改变 组件被复用时调用，比如在使用带动态参数的路径foo/:id  在foo/ 1 和foo/2 之间跳转 foo组件被复用了 此时就可以调用这个钩子
+beforeRouteLeave 在离开当前路由时调用，可提醒用户尚未保存是否确定离开
+ - next()方法的不同调用方式
+    next()
+        继续当前导航
+    next(false)
+        中断当前导航
+    next('/path')
+        重定向到指定路径
+    next(error)
+        触发错误处理逻辑（Vue3特性）
 
 ### vue的数据双向绑定原理  
-使用数据劫持结合发布者订阅者的模式，使用object.defineproperty劫持各个属性的geter seter，在数据变动时发布消息给订阅者 触发监听回调去更新对应的dom
+1. 初始化阶段进行数据劫持
+    遍历data中所有属性，使用defineProperty设置属性的getter和setter，每个属性都会有一个dep也就是依赖收集器
+2. 渲染阶段
+    模版编译后，如果读取了data中的数据，就会触发数据的getter，生成一个watcher实例，加入到dep中
+3. 更新阶段
+    data中的数据发生变化的时候，会遍历他的dep中的所有watcher，进而触发组件的重新渲染
+存在的问题
+- 对象的监听
+- 数组的监听
+- 性能问题，因为在初始化时要递归遍历data中的所有数据
 
 
 ### created和mounted中请求数据有什么区别
