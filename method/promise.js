@@ -1,4 +1,3 @@
-const { type } = require("os")
 
 class IPromise {
     constructor(executor) {

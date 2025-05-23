@@ -275,7 +275,7 @@ react 的装饰器模式 - 高阶组件 HOC
 ```js
 const BorderHoc = WrappedComponent => class extends Component {
     render() {
-        return <div style={{border: 'solid 1pc red'}}>
+        return <div style={{border: 'solid 1px red'}}>
             <WrappedComponent />
         </div>
     }

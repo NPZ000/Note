@@ -1,0 +1,3 @@
+"github.copilot.exclude": {
+  "**/.leetcode/*.js": true,   
+}

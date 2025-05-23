@@ -9,7 +9,7 @@
 function getIntersectionNode(A, B) {
     let headA = A, headB = B
     while (headA !== headB) {
-        // 这里的判断条件必须是当前节点，而不能是next，这样会都一遍null，如果没有相交的节点，最后都是null，就返回了null，如果判断的是next，就会跳过null，在没有相交的case中，就会死循环
+        // 这里的判断条件必须是当前节点，而不能是next，这样会都走一遍null，如果没有相交的节点，最后都是null，就返回了null，如果判断的是next，就会跳过null，在没有相交的case中，就会死循环
         headA = headA ? headA.next : B
         headB = headB ? headB.next : A
     }
