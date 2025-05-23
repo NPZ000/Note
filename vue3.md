@@ -50,7 +50,7 @@ vue2 中是用 data 方法返回了一个对象，在 vue3 中是用 ref 和 rea
 9. watchPostEffect 
 同 watchEffect ，是在组件更新之后执行的，可以拿到更新之后的dom
 10. watch vs watchEffect
-watch需要显示的制定要监听的数据，并且可以拿到oldvalue，不设置immediate就不会立即执行，watchEffect不需要显示指定要监听的数据，会自动追踪访问到的响应式属性，拿不到oldvalue，会立即执行
+watch需要显示的指定要监听的数据，并且可以拿到oldvalue，不设置immediate就不会立即执行，watchEffect不需要显示指定要监听的数据，会自动追踪访问到的响应式属性，拿不到oldvalue，会立即执行
 11. 使用监听器拿到更新后的dom
 设置flush: post, 或者使用watchPostEffect
 12. 路由跳转
@@ -191,3 +191,41 @@ mitt.on('a', a => {
     console.og(a)
 })
 ```
+
+## Vue3的声明周期
+OnBeforeMount
+OnMounted
+OnBeforeUpdate
+OnUpdated
+OnBeforeUnmount
+OnUnmounted
+OnActivated
+OnDeactivated
+
+## Vue3的性能优化
+### 加载优化
+- 构建与包体积优化
+    1. 现代化的打包工具会对包产物进行 tree shake，如果没有用到的模块不会被打包进来
+    2. 引入新的依赖时，尽量使用支持 ES 模块格式的依赖，比如 lodash-es 
+- 代码分割
+    1. 使用 defineAsyncComponent 对组件进行懒加载处理，这样组件只有在使用时才会被加载，现代的打包工具会对其进行分割，拆成独立的文件，不会在第一次就进行加载
+### 更新优化
+- props 稳定性
+通常情况下，子组件会在至少有一个prop改变的情况下进行更新，可能有的时候组件的props改变了，但其实这个改变和他没有关系，比如一个listItem组件内部接受一个id 和 activeId ，组件内部判断这两个值相等来感知是否是自己被激活了，这样的话，每当activeId变化，每个listItem组件都会更新，但其实应该只有被激活的那个组件需要更新，所以可以把这个判断是否激活的逻辑放在父组件，子组件接受的是active = activeId === id，其实就是尽量保持props的稳定性
+- v-once
+如果一个元素只依赖组件初始化的一个数据，并且这个数据之后不会再发生变化，可以用v-once进行标记，在之后的更新，vue会将其标记为静态元素，在diff的过程中跳过对这部分的处理
+- v-memo
+可以传入依赖项数组，如果数组中的值没有发生变化，将不会进行rerender，通常用于长列表场景，可能这个长列表在两次更新之中，并没有发生变化，可以用v-memo，依赖项数组中写入强依赖更新的值
+- 计算属性稳定性
+如果computed返回的是一个引用类型的值，比如 { flag: true },即使 flag 的值每次都是true，但是因为对象的引用发生了变化，所以依然会触发更新，所以可以在 computed 内部进行手动判断，并返回一个基本类型的 boolean 的值
+### 通用优化
+- 虚拟列表
+处理数据很长的列表
+- 减少大型不可变数据的响应式开销
+vue默认会对数据进行深度递归的响应式处理，这在大部分场景都没有什么问题，但是在数据的结构复杂或者嵌套层级过深的情况下会带来不小的性能负担，vue对此也提供了解决方案
+    1. shallowRef()
+    ref的浅层形式，和 ref 不同，浅层ref内部的值回原样保存和暴露，不会被深层递归转为响应式数据，只有对.vue的读写是响应式，如果有一个嵌套层级很深的数据，并且不需要在数据深层的属性发生变化时做一些事情，或者深层的属性不会单独被修改，如果会变只是整个数据一起变，这时候就可以用shallowRef，来减少一些vue对数据的响应式处理工作
+    2. shallowReactive
+    同上
+- 避免不必要的组件抽象
+相对于普通的dom节点来说，组件实例会带来更大的开销。所以尽量较少不必要的组件抽象

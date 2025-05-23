@@ -1,13 +1,10 @@
-function foo() {
-
+function foo(nums) {
+    if (!nums.length) return 0
+    let total = nums[0]
+    let max = 0
+    for (const num of nums) {
+        max = Math.max(max, total + num)
+        total = Math.max(0, total + num)
+    }
+    return max
 }
-
-const bar = new foo()
-
-console.log(bar.__proto__)
-console.log(bar.__proto__.__proto__)
-console.log(bar.__proto__.__proto__.__proto__)
-// console.log(bar.__proto__.__proto__.__proto__.__proto__)
-console.log(foo.prototype)
-console.log(foo.prototype.prototype)
-console.log(foo.prototype.prototype.prototype)
